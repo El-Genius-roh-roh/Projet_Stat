@@ -36,7 +36,7 @@ contribution = contribution %>%
 
 #Affichage des dimensions des variables qui ont le contribution maximal sur l'axe 1
 contribution %>% 
-  filter(Dim_principale == 1)
+  filter(Dim_principale == 5)
 
 
 # --------Etude des variables sur les graphs de l'ACP---------
@@ -73,3 +73,8 @@ var_axe4 = contribution %>%
   filter(Dim_principale == 4) %>% 
   pull(variable)
 fviz_pca_var(ACP, axes = c(3, 4), select.var = list(name = var_axe4), repel = T)
+
+var_axe5 = contribution %>% 
+  filter(Dim_principale == 5) %>% 
+  pull(variable)
+fviz_pca_var(ACP, axes = c(4, 5), select.var = list(name = var_axe5), repel = T)
