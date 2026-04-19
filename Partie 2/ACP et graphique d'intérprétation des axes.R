@@ -1,8 +1,14 @@
 #ACP sur toutes les variables
-ACP = PCA(data_moins_na, graph = F)
+ACP = PCA(data_moins_na, graph = F, ncp = 7)
+
+#Méthode du coude pour choisir le nombre d'axes à conserver
+barplot(ACP$eig[, 2], names.arg = 1:nrow(ACP$eig),
+        main = "Variances expliquées (%)", xlab = "Axes")
 
 # Extraction des coordonnées des individus sur les axes
 axes_acp <- as.data.frame(ACP$ind$coord)
+
+
 
 
 #------Interprétation--------
@@ -16,6 +22,8 @@ fviz_contrib(ACP, choice = "var", axes = 2)
 fviz_contrib(ACP, choice = "var", axes = 3)
 fviz_contrib(ACP, choice = "var", axes = 4)
 fviz_contrib(ACP, choice = "var", axes = 5)
+fviz_contrib(ACP, choice = "var", axes = 6)
+fviz_contrib(ACP, choice = "var", axes = 7)
 
 
 #Création d'un dataframe qui contient les contributions de chaque variable
@@ -36,10 +44,42 @@ contribution = contribution %>%
 
 #Affichage des dimensions des variables qui ont le contribution maximal sur l'axe 1
 contribution %>% 
-  filter(Dim_principale == 4)
+  filter(Dim_principale == 6)
+
 
 
 # --------Etude des variables sur les graphs de l'ACP---------
+
+
+# Extraction des top 10 par dimension principale
+top_dim1 <- contribution %>% filter(Dim_principale == 1) %>% arrange(desc(Plus_grande_contrib)) %>% slice_head(n = 10) %>% pull(variable)
+top_dim2 <- contribution %>% filter(Dim_principale == 2) %>% arrange(desc(Plus_grande_contrib)) %>% slice_head(n = 10) %>% pull(variable)
+top_dim3 <- contribution %>% filter(Dim_principale == 3) %>% arrange(desc(Plus_grande_contrib)) %>% slice_head(n = 10) %>% pull(variable)
+top_dim4 <- contribution %>% filter(Dim_principale == 4) %>% arrange(desc(Plus_grande_contrib)) %>% slice_head(n = 10) %>% pull(variable)
+top_dim5 <- contribution %>% filter(Dim_principale == 5) %>% arrange(desc(Plus_grande_contrib)) %>% slice_head(n = 10) %>% pull(variable)
+
+# Union par plan
+vars_plan12 <- union(top_dim1, top_dim2)
+vars_plan34 <- union(top_dim3, top_dim4)
+vars_plan45 <- union(top_dim4, top_dim5)
+
+
+# Vecteur de couleurs pour TOUTES les variables de l'ACP
+tous_les_noms <- rownames(ACP$var$coord)
+
+couleurs_plan12 <- ifelse(tous_les_noms %in% top_dim1, "#E74C3C",
+                          ifelse(tous_les_noms %in% top_dim2, "#3498DB", "grey"))
+
+fviz_pca_var(ACP, axes = c(1,2), title = "Dim 1 et 2", repel = TRUE,
+             select.var = list(name = vars_plan12),
+             col.var = couleurs_plan12,
+             label = "none") +
+  theme(legend.position = "none")
+
+
+
+
+
 
 
 #Création d'un vecteur qui contient le nom de toutes les variables qui ont pour

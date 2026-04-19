@@ -7,6 +7,9 @@ library(FactoMineR)
 library(naniar)
 library(factoextra)
 library(tibble)
+library(gridExtra)
+library(corrplot)
+library(psych)
 
 #On import la base de données
 data<-readRDS('data_clean.rds')
