@@ -7,6 +7,7 @@ library(FactoMineR)
 library(naniar)
 library(factoextra)
 library(tibble)
+library(ggrepel)
 
 #On import la base de données
 data<-readRDS('data_clean.rds')

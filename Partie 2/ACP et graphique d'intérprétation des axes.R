@@ -1,6 +1,15 @@
 #ACP sur toutes les variables
 ACP = PCA(data_moins_na, graph = F)
 
+#Affichage de la variance expliquée par chaque axe
+
+fviz_eig(ACP, ncp = 10, addlabels = TRUE, y = "Pourcentage de variance expliquée",
+         main = "Variance expliquée par chaque dimension") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+        plot.title = element_text(hjust = 0.5, face = "bold")) 
+# angle = 90 fait pivoter le texte à la verticale
+
+
 # Extraction des coordonnées des individus sur les axes
 axes_acp <- as.data.frame(ACP$ind$coord)
 
@@ -42,26 +51,61 @@ contribution %>%
 # --------Etude des variables sur les graphs de l'ACP---------
 
 
-#Création d'un vecteur qui contient le nom de toutes les variables qui ont pour
-#contribution max l'axe 1
-
-var_axe1 = contribution %>% 
-  filter(Dim_principale == 1) %>% 
-  pull(variable) #Cette ligne permet de renvoyer un vecteur qui contient
-# seuelement ce qui se trouve sur la collonne "variable" (dans notre cas c'est 
-# le nom de variable)
-
-
-fviz_pca_var(ACP, axes = c(1, 2), select.var = list(name = var_axe1), repel = T)
-#repel = T évite juste que les variables se chevauchent
-
-
-#On fait la même pour les autres axes
-
-var_axe2 = contribution %>% 
-  filter(Dim_principale == 2) %>% 
+var_axe1 = contribution %>%
+  filter(Dim_principale == 1) %>%
+  slice_max(Dim.1, n = 5) %>%
   pull(variable)
-fviz_pca_var(ACP, axes = c(1, 2), select.var = list(name = var_axe2), repel = T)
+
+var_axe2 = contribution %>%
+  filter(Dim_principale == 2) %>%
+  slice_max(Dim.2, n = 5) %>%
+  pull(variable)
+
+# Extraction des coordonnées des variables
+var_coords <- as.data.frame(ACP$var$coord) %>%
+  rownames_to_column("variable") %>%
+  filter(variable %in% c(var_axe1, var_axe2)) %>%
+  mutate(groupe = ifelse(variable %in% var_axe1, 
+                         "Variables qui contribuent à l'axe 1",
+                         "Variables qui contribuent à l'axe 2")) %>%
+  mutate(variable = recode(variable,
+                           "ST341Q05JA" = "Je vois de la beauté partout",
+                           "ST342Q03JA" = "Je trouve qu'avoir des nouvelles idées est satisfaisant",
+                           "ST340Q06JA" = "J'aime réflèchir à des nouvelles façon de résoudre des problèmes",
+                           "ST340Q01JA" = "Faire quelque chose de créatif est satisfaisant",
+                           "ST340Q09JA" = "Je peux proposer plusieurs solutions à un problème",
+                           "ST338Q06JA" = "Je lis des journaux",
+                           "ST338Q07JA" = "Participation club de science",
+                           "ST338Q05JA" = "Participation club de théâtre",
+                           "ST338Q04JA" = "Participation club de débat",
+                           "ST338Q02JA" = "Participation atelier d'écriture"
+  ))
+
+# Cercle
+cercle <- data.frame(
+  x = cos(seq(0, 2*pi, length.out = 100)),
+  y = sin(seq(0, 2*pi, length.out = 100))
+)
+
+ggplot(var_coords) +
+  geom_path(data = cercle, aes(x, y), color = "grey70") +
+  geom_segment(aes(x = 0, y = 0, xend = Dim.1, yend = Dim.2, color = groupe),
+               arrow = arrow(length = unit(0.2, "cm"))) +
+  geom_text_repel(aes(x = Dim.1, y = Dim.2, label = variable, color = groupe),
+                  show.legend = FALSE) +
+  scale_color_manual(values = c("Variables qui contribuent à l'axe 1" = "#E06C6C",
+                                "Variables qui contribuent à l'axe 2" = "#5B9BD5")) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  coord_fixed() +
+  labs(title = "Les 10 variables les mieux représentées sur respectivement l'axe 1 et 2",
+       x = paste0("Dim1 (", round(ACP$eig[1,2], 1), "%)"),
+       y = paste0("Dim2 (", round(ACP$eig[2,2], 1), "%)"),
+       color = "Contribution des variables") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"),
+        legend.position = "right")
+
 
 
 var_axe3 = contribution %>% 
