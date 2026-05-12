@@ -16,15 +16,23 @@ axes_acp <- as.data.frame(ACP$ind$coord)
 
 #------Interprétation--------
 
-#Script qui permet d'afficher les graphiques pour interpréter les axes :
+# 1. On extrait les contributions (assure-toi que l'objet ACP existe)
+contribs <- as.data.frame(ACP$var$contrib)
 
-#Je commence par afficher la répartition des contributions de chaque variable
-#pour chaque axe
-fviz_contrib(ACP, choice = "var", axes = 1)
-fviz_contrib(ACP, choice = "var", axes = 2)
-fviz_contrib(ACP, choice = "var", axes = 3)
-fviz_contrib(ACP, choice = "var", axes = 4)
-fviz_contrib(ACP, choice = "var", axes = 5)
+# 2. On trie par la première colonne (Axe 1) et on prend les 10 premières lignes
+top10_dim1 <- contribs[order(-contribs[, 1]), ][1:5, ]
+
+# 3. On trie par la deuxième colonne (Axe 2) et on prend les 10 premières lignes
+top10_dim2 <- contribs[order(-contribs[, 2]), ][1:5, ]
+
+# 4. On fusionne les deux listes
+tableau_final <- unique(rbind(top10_dim1, top10_dim2))
+
+# 5. On arrondit pour que ce soit joli
+tableau_final <- round(tableau_final[, 1:2], 2)
+
+# 6. On affiche
+print(tableau_final)
 
 
 #Création d'un dataframe qui contient les contributions de chaque variable
@@ -53,12 +61,12 @@ contribution %>%
 
 var_axe1 = contribution %>%
   filter(Dim_principale == 1) %>%
-  slice_max(Dim.1, n = 5) %>%
+  slice_max(Dim.1, n = 10) %>%
   pull(variable)
 
 var_axe2 = contribution %>%
   filter(Dim_principale == 2) %>%
-  slice_max(Dim.2, n = 5) %>%
+  slice_max(Dim.2, n = 10) %>%
   pull(variable)
 
 # Extraction des coordonnées des variables
@@ -91,17 +99,19 @@ ggplot(var_coords) +
   geom_path(data = cercle, aes(x, y), color = "grey70") +
   geom_segment(aes(x = 0, y = 0, xend = Dim.1, yend = Dim.2, color = groupe),
                arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_text_repel(aes(x = Dim.1, y = Dim.2, label = variable, color = groupe),
-                  show.legend = FALSE) +
-  scale_color_manual(values = c("Variables qui contribuent à l'axe 1" = "#E06C6C",
-                                "Variables qui contribuent à l'axe 2" = "#5B9BD5")) +
+  scale_color_manual(
+    values = c("Variables qui contribuent à l'axe 1" = "#E06C6C", 
+               "Variables qui contribuent à l'axe 2" = "#5B9BD5"),
+    labels = c("Variables qui contribuent à l'axe 1" = "10 Variables qui contribuent le plus à l'axe 1",
+               "Variables qui contribuent à l'axe 2" = "10 Variables qui contribuent le plus à l'axe 2")
+  ) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
   coord_fixed() +
   labs(title = "Les 10 variables les mieux représentées sur respectivement l'axe 1 et 2",
        x = paste0("Dim1 (", round(ACP$eig[1,2], 1), "%)"),
        y = paste0("Dim2 (", round(ACP$eig[2,2], 1), "%)"),
-       color = "Contribution des variables") +
+       color = "Type de contribution") + # Change le titre de la légende ici
   theme_minimal() +
   theme(plot.title = element_text(face = "bold"),
         legend.position = "right")
